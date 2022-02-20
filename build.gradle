@@ -4,13 +4,20 @@ plugins{
     id 'java-gradle-plugin'
 }
 
+def integrationTest = sourceSets.create("integrationTest")
+
 repositories {
     mavenCentral()
 }
 
+println "Integration Test: ${integrationTest.allGroovy.files}"
+
 dependencies {
-    
     implementation 'org.codehaus.groovy:groovy-all:2.4.15'
+    integrationTestImplementation gradleTestKit()
+    integrationTestImplementation 'junit:junit:4.13'
+    integrationTestRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.2"
+    // integrationTestImplementation(project)
 }
 
 gradlePlugin {
@@ -20,4 +27,18 @@ gradlePlugin {
             implementationClass = 'org.boblloyd.gradleprojectreport.ProjectReport'
         }
     }
+    testSourceSets sourceSets.integrationTest
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    // shouldRunAfter test
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
