@@ -1,0 +1,23 @@
+plugins{
+    id 'groovy'
+    id 'wrapper'
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    
+    implementation 'org.codehaus.groovy:groovy-all:2.4.15'
+}
+
+gradlePlugin {
+    plugins {
+        simplePlugin {
+            id = 'org.boblloyd.GradleProjectReport'
+            implementationClass = 'org.boblloyd.gradleprojectreport.ProjectReport'
+        }
+    }
+}
