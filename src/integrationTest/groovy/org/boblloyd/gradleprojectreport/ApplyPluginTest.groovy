@@ -29,23 +29,38 @@ class ApplyPluginTest {
                                   "  id 'org.boblloyd.GradleProjectReport'" +
                                   "}";
         writeFile(buildFile, buildFileContent);
-
-        String gradlePropertiesFileContent = "version=1.0.1" +
-                                             "group=org.test.project"
-        writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
     }
 
     @Test
     public void applyPlugin_HappyPath(){
-        def result = GradleRunner.create()
-            .withProjectDir(projectFolder)
-            .withArguments('projectReport')
-            .withPluginClasspath()
-            .build()
+        String gradlePropertiesFileContent = "version=1.0.1" +
+                                             "group=org.test.project"
+        writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
+        def result = build()
 
         assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("1.0.1"));
         assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("org.test.project"));
         assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+    }
+
+    @Test
+    public void applyPlugin_HappyPath_DifferentValues(){
+        String gradlePropertiesFileContent = "version=2.3.4" +
+                                             "group=com.company.project"
+        writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
+        def result = build()
+
+        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("2.3.4"));
+        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("com.company.project"));
+        assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+    }
+
+    private def build(){
+        return GradleRunner.create()
+            .withProjectDir(projectFolder)
+            .withArguments('projectReport')
+            .withPluginClasspath()
+            .build()
     }
 
     private void writeFile(File destination, String content) throws IOException {

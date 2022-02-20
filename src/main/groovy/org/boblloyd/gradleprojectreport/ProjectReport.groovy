@@ -18,7 +18,7 @@ class ProjectReport implements Plugin<Project> {
             doLast(){
                 println "Version: ${project.version}"
                 println "Group: ${project.group}"
-                println "Is Show Dependencies: ${extension.isShowDependency.get()}"
+                println "Is Show Dependencies: ${extension.renderDependencies.get()}"
                 println "Report Output Directory: ${extension.output.get()}"
             }
         }

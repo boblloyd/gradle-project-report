@@ -4,9 +4,9 @@ import org.gradle.api.provider.Property;
 
 abstract class ProjectReportExtension {
     abstract Property<String> getOutput()
-    abstract Property<Boolean> getIsShowDependency()
+    abstract Property<Boolean> getRenderDependencies()
 
     ProjectReportExtension(){
-        isShowDependency.convention(false)
+        renderDependencies.convention(false)
     }
 }

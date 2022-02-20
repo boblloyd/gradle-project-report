@@ -20,6 +20,14 @@ dependencies {
     // integrationTestImplementation(project)
 }
 
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
+        publishAlways()
+    }
+}
+
 gradlePlugin {
     plugins {
         simplePlugin {
@@ -42,3 +50,5 @@ tasks.register('integrationTest', Test) {
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
 }
+
+check.dependsOn "integrationTest"
