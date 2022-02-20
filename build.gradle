@@ -10,8 +10,6 @@ repositories {
     mavenCentral()
 }
 
-println "Integration Test: ${integrationTest.allGroovy.files}"
-
 dependencies {
     implementation 'org.codehaus.groovy:groovy-all:2.4.15'
     integrationTestImplementation gradleTestKit()
@@ -24,7 +22,7 @@ gradleEnterprise {
     buildScan {
         termsOfServiceUrl = "https://gradle.com/terms-of-service"
         termsOfServiceAgree = "yes"
-        publishAlways()
+        // publishAlways()
     }
 }
 

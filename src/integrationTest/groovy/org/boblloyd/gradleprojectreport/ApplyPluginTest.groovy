@@ -8,8 +8,14 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 import static org.junit.Assert.*
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import static org.gradle.testkit.runner.TaskOutcome.FAILED
+import static org.gradle.testkit.runner.TaskOutcome.*
+
+/*
+ * With these tests, we're only making sure the build.gradle file
+ *  compiles and runs with our plugin applied.  This makes sure that our
+ *  plugin has the right name, and if the name or properties change, or something
+ *  breaks fundamentally with the plugin, this test set will fail.
+ */
 
 class ApplyPluginTest {
     @Rule
@@ -25,8 +31,9 @@ class ApplyPluginTest {
         buildFile = new File(projectFolder, "build.gradle");
         gradlePropertiesFile = new File(projectFolder, "gradle.properties");
 
-        String buildFileContent = "plugins {" + 
-                                  "  id 'org.boblloyd.GradleProjectReport'" +
+        String buildFileContent = "plugins {\n" + 
+                                  "  id 'base'\n" + 
+                                  "  id 'org.boblloyd.GradleProjectReport'\n" +
                                   "}";
         writeFile(buildFile, buildFileContent);
     }
@@ -36,11 +43,8 @@ class ApplyPluginTest {
         String gradlePropertiesFileContent = "version=1.0.1" +
                                              "group=org.test.project"
         writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
-        def result = build()
-
-        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("1.0.1"));
-        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("org.test.project"));
-        assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+        def result = build('build')
+        assertEquals(UP_TO_DATE, result.task(":build").getOutcome());
     }
 
     @Test
@@ -48,17 +52,15 @@ class ApplyPluginTest {
         String gradlePropertiesFileContent = "version=2.3.4" +
                                              "group=com.company.project"
         writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
-        def result = build()
+        def result = build('build')
 
-        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("2.3.4"));
-        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("com.company.project"));
-        assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+        assertEquals(UP_TO_DATE, result.task(":build").getOutcome());
     }
 
-    private def build(){
+    private def build(String args){
         return GradleRunner.create()
             .withProjectDir(projectFolder)
-            .withArguments('projectReport')
+            .withArguments(args)
             .withPluginClasspath()
             .build()
     }
