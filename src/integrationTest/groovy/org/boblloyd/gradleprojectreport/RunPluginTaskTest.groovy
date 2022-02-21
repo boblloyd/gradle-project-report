@@ -26,6 +26,7 @@ class RunPluginTaskTest {
     public File gradlePropertiesFile
     public File settingsFile
     public File reportFile
+    public String gradleVersion
 
     @Before
     public void setup() {
@@ -42,6 +43,11 @@ class RunPluginTaskTest {
         String settingsContent = "rootProject.name = '${projectName}'"
         writeFile(settingsFile, settingsContent)
         reportFile = new File(projectFolder, "build/reports/${projectName}.md")
+
+        if(System.getProperty("gradleVersion") && System.getProperty("gradleVersion") != ""){
+            gradleVersion = System.getProperty("gradleVersion")
+        }
+
     }
 
     @Test
@@ -136,12 +142,16 @@ class RunPluginTaskTest {
     }
 
     private def build(String args){
-        return GradleRunner.create()
-            .withGradleVersion(System.getProperty("gradleVersion"))
+        // If gradleVersion is not specified, then use the default one that is running this build
+        def runner = GradleRunner.create()
             .withProjectDir(projectFolder)
             .withArguments(args)
             .withPluginClasspath()
-            .build()
+        if(gradleVersion){
+            return runner.withGradleVersion(gradleVersion).build()
+        } else {
+            return runner.build()
+        }
     }
 
     private void writeFile(File destination, String content, boolean append = false) throws IOException {

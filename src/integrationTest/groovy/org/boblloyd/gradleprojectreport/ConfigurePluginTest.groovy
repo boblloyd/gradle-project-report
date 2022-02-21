@@ -23,6 +23,7 @@ class ConfigurePluginTest {
     public File projectFolder
     public File buildFile
     public File gradlePropertiesFile
+    public String gradleVersion
 
     @Before
     public void setup() {
@@ -35,6 +36,10 @@ class ConfigurePluginTest {
                                   "  id 'org.boblloyd.GradleProjectReport'\n" +
                                   "}";
         writeFile(buildFile, buildFileContent);
+
+        if(System.getProperty("gradleVersion") && System.getProperty("gradleVersion") != ""){
+            gradleVersion = System.getProperty("gradleVersion")
+        }
     }
 
     @Test
@@ -86,11 +91,16 @@ class ConfigurePluginTest {
     }
 
     private def build(String args){
-        return GradleRunner.create()
+        // If gradleVersion is not specified, then use the default one that is running this build
+        def runner = GradleRunner.create()
             .withProjectDir(projectFolder)
             .withArguments(args)
             .withPluginClasspath()
-            .build()
+        if(gradleVersion){
+            return runner.withGradleVersion(gradleVersion).build()
+        } else {
+            return runner.build()
+        }
     }
 
     private void writeFile(File destination, String content, boolean append = false) throws IOException {
