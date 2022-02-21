@@ -21,8 +21,6 @@ abstract class ProjectReportTask extends DefaultTask{
     abstract public Property<String> getProjectGroup();
     @Input
     abstract public MapProperty<String, ArrayList> getConfigurations();
-    @Input
-    abstract public Property<String> getOutputDir()
 
     @Internal
     final Provider<String> reportName = projectName.map { it + '.md' }

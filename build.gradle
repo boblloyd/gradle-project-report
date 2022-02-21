@@ -23,8 +23,12 @@ dependencies {
 gradleEnterprise {
     buildScan {
         termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        // Uncomment this line if you'd like to accept the terms-of-service automatically
+        //  It is not ideal to accept this by default, as downstream users would be agreeing
+        //  to ToS they would not be presented to read.
+        // Default for this value is "no"
         termsOfServiceAgree = "yes"
-        // publishAlways()
+        publishAlways()
     }
 }
 
@@ -44,20 +48,21 @@ tasks.register('integrationTest')
 //  can create integrationTest tasks for them
 def get = new URL("https://services.gradle.org/distributions/").openConnection();
 def getRC = get.getResponseCode();
-def versions = []
+def gradleVersions = []
 if (getRC.equals(200)) {
     String stream = get.getInputStream().getText()
     def lines = stream.split('\n')
     lines.each{line ->
         if(line.startsWith('<span class="name">gradle-')){
             if(!line.contains('-rc') && !line.contains('milestone') && line.contains('gradle-7.')){
-                gradleVersion = line.split('-')[1]
-                gradleVersions.add(version)
+                String gradleVersion = line.split('-')[1]
+                gradleVersions.add(gradleVersion)
             }
         }
     }
 }
-gradleVersions.unique()
+// gradleVersions.unique()
+gradleVersions = ['7.3']
 gradleVersions.each{ gradleVersion ->
     tasks.register("integrationTest-${gradleVersion}", Test) {
         description = 'Runs integration tests.'
@@ -76,3 +81,14 @@ tasks.withType(Test).configureEach {
 }
 
 check.dependsOn "integrationTest"
+
+tasks.register('package', Zip){
+    from fileTree("."){
+        exclude(".gradle")
+        exclude(".git")
+        exclude("build")
+    }
+    // into(".github"){
+    //     from fileTree(".github")
+    // }
+}

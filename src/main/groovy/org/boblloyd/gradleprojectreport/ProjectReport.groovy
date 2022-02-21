@@ -22,32 +22,33 @@ class ProjectReport implements Plugin<Project> {
             //  value to true.  Otherwise, we don't set the project.configurations to evaluate
             if(extension.renderDependencies.get()){
                 project.configurations.each{config ->
-                    println("Configuration: ${config.name}")
                     if(config.canBeResolved){
-                        def depList = []
-                        config.dependencies.each{ dependency ->
-                            config.files(dependency).each{
-                                String group = dependency.group ?: 'file'
-                                String name = dependency.name
-                                String version = dependency.version ?: ''
-                                String file = it.name
-                                if(name == 'unspecified'){
-                                    name = ''
-                                }
-                                String gav = "${group}:${name}:${version}"
-                                if(gav == "file::"){
-                                    file = it.path
-                                }
-                                depList.add("${gav} - ${file}")
-                            }
-                        }
-                        configurations.put("${config.name}", depList)
+                        configurations.put("${config.name}", getDependenciesForConfiguration(config))
                     }
                 }
             }
-            outputDir = extension.output
             reportPath = new File(extension.output.get(), getReportName().get())
-            
         }
+    }
+
+    private def getDependenciesForConfiguration(def config){
+        def depList = []
+        config.dependencies.each{ dependency ->
+            config.files(dependency).each{
+                String group = dependency.group ?: 'file'
+                String name = dependency.name
+                String version = dependency.version ?: ''
+                String file = it.name
+                if(name == 'unspecified'){
+                    name = ''
+                }
+                String gav = "${group}:${name}:${version}"
+                if(gav == "file::"){
+                    file = it.path
+                }
+                depList.add("${gav} - ${file}")
+            }
+        }
+        return depList
     }
 }

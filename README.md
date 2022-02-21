@@ -21,6 +21,7 @@ apply plugin: 'org.boblloyd.GradleProjectReport'
 ```
 
 ## Tasks
+
 This plugin creates a task of type ProjectReportTask called `projectReport`.  This task will handle the generation of the markdown report file, and associated configuration.
 
 To execute the task:
@@ -52,6 +53,23 @@ projectReport{
 }
 ```
 
+# Building
+To build the plugin, we can utilize the `build` or `assemble` commands.  By default, the `build` task depends on `check`, which in turn executes all of the tests.  Runnin gonly `assemble` will compile and produce the necessary JAR file for use in other projects.
+
+```
+./gradlew assemble
+```
+
+# Caching
+This plugin will cache configuration and build artifacts that are used.  For instance, the `renderDependencies` and `output` configuration, as part of the `projectReport` task configuration will be cached, along with the project dependencies.  This will ensure that the task will not be re-run, and dependencies will not be resolved again, if the dependencies, or configuration changes.
+
+This also ensures that if dependencies do change, and only dependencies change, running the `projectReport` task again will regenerate the report with the updated information.
+
+In addition, the output file, the report file, will be cached as well.  If this file is modified or removed, rerunning the task again will cause the task to no longer be up-to-date and will re-run.
+
+# CI
+Currently, this project uses GitHub Actions for CI builds.  This is done using the gradle-build-action, using JDK 11 on an Ubuntu (latest) image.  Currently, this CI build pipeline only provides validation (compile and testing) CI builds, and does not implement any continuous delivery mechanisms (deployment or release engineering).  Furthermore, security tests and scan are not currently implemented.
+
 # Conventions and Considerations
 
 ## Plugin Location
@@ -60,9 +78,11 @@ The plugin is not available publicly at this time.  As this requires uploading t
 
 ## Testing
 
-Test coverage is not 100% at this time.  While sufficient edge case testing has been completed, there are not unit tests for all use cases.  Much of this functionality was done in the Integration Test phase, as Gradle plugin application and task generation requires significant abstraction and mocking.
+Test coverage is not 100% at this time.  While sufficient functionality, integration, and edge case testing has been completed, there are not unit tests for all branches or lines of code.  Much of this functionality was done in the Integration Test phase, as Gradle plugin application and task generation requires significant abstraction and mocking.
 
 Unit tests exist for lower level functionality, such as writing the report to the markdown file.  While this can easily be abstracted using jUnit temporary files, testing the task, extension, and plugin classes would be much more difficult.  Cost versus benefit was not significant to move this testing to the integration test phase, via Gradle TestKit functionality.
+
+Future consideration should be given to ensuring that the code coverage is monitored for the ProjectReport, ProjectReportExtension, ProjectReportModel, and ProjectReportTask classes.  While these classes are tested via the integrationTests, these tests are slow and costly, when compared to unit tests.  Unit testing over these would, at this time, be more expensive as they require objects from Gradle's API to be mocked or stubbed.
 
 ### Gradle TestKit
 
@@ -77,3 +97,9 @@ This could be improved in the future in a number of ways
 * Getting the list of versions from the remote site, and parsing HTML responses is not idea.  I'm unaware at this time if there is an API to get this data, but this was as simple as I could make it right now.
 * * This also adds the effect of performing the query to the Gradle distributions site each time the build is run.  This would be better suited to be cached in the future, and only queried as a changing dependency (i.e. after some time) as Gradle releases are not made that often.
 * * This could also be implemented into a plugin of it's own to retrieve this version list.  Providing the list of acceptable major versions, and combining them with additional test iterations would be more effective.
+* During generation of the dependencies, when `renderDependencies` is set to `true`, there are times when dependencies may show up as `file:: - /Path/to/file.jar`.  This is the case of dependencies defined by explicit paths to jar files, rather than resolved dependencies through a GAVC.  The use of the `file::` moniker is to assist with identification that this dependency is not resolved from an external resource, but is local to the build system.
+* * There are also cases where inter-project dependencies, in the case of a multi-project build, show up in dependency resolution.  These dependencies should show in the normal `group:name:version - file.jar` type format, as normal dependencies are shown.
+* Currently, logging for the plugin is done only to standard out, and is minimal.  This could be much improved to provide `info` and `debug` logging, but was not explicitly a requirement.  This would be an improvement for functionality and usability in the long run, however.
+
+### package task
+This task exists for the purpose of packaging the main, test, and integration test source code, as well as the build and CI files into a single zip file.  This is for the purpose of easy uploading without manually creating a zip file of the project, and can be re-used if changes needed to be made.
