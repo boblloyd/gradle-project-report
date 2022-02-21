@@ -12,15 +12,24 @@ class ProjectReport implements Plugin<Project> {
         // Add the 'projectReport' extension object
         def extension = project.extensions.create('projectReport', ProjectReportExtension)
         // Default the output directory to the project's build output, but this can be overridden
-        extension.output = "${project.buildDir}/reports/projectReport.md"
+        extension.output = "${project.buildDir}/reports/"
         // Add a task that uses configuration from the extension object
-        project.task("projectReport"){
-            doLast(){
-                println "Version: ${project.version}"
-                println "Group: ${project.group}"
-                println "Is Show Dependencies: ${extension.renderDependencies.get()}"
-                println "Report Output Directory: ${extension.output.get()}"
-            }
+        project.tasks.register('projectReport', ProjectReportTask){
+            projectName = project.name
+            projectVersion = project.version
+            projectGroup = project.group
+            // if (extension.renderDependencies.get()){
+            //     projectConfigurations = project.configurations
+            // }
+            outputDir = project.file(extension.output)
         }
+        // project.task("projectReport"){
+        //     doLast(){
+        //         println "Version: ${project.version}"
+        //         println "Group: ${project.group}"
+        //         println "Is Show Dependencies: ${extension.renderDependencies.get()}"
+        //         println "Report Output Directory: ${extension.output.get()}"
+        //     }
+        // }
     }
 }
