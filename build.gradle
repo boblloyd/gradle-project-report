@@ -5,7 +5,9 @@ plugins{
 }
 
 def integrationTest = sourceSets.create("integrationTest")
-
+def defaultGradleVersion = '7.3'
+def allGradleVersions = ['7.0', '7.0.1', '7.0.2', '7.1', '7.1.1', 
+    '7.2', '7.3', '7.3.1', '7.3.2', '7.3.3', '7.4']
 repositories {
     mavenCentral()
 }
@@ -42,28 +44,19 @@ gradlePlugin {
     testSourceSets sourceSets.integrationTest
 }
 
-tasks.register('integrationTest')
+tasks.register("integrationTest", Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
 
-// This code gets the list of Gradle versions for a specific major release, so we
-//  can create integrationTest tasks for them
-def get = new URL("https://services.gradle.org/distributions/").openConnection();
-def getRC = get.getResponseCode();
-def gradleVersions = []
-if (getRC.equals(200)) {
-    String stream = get.getInputStream().getText()
-    def lines = stream.split('\n')
-    lines.each{line ->
-        if(line.startsWith('<span class="name">gradle-')){
-            if(!line.contains('-rc') && !line.contains('milestone') && line.contains('gradle-7.')){
-                String gradleVersion = line.split('-')[1]
-                gradleVersions.add(gradleVersion)
-            }
-        }
-    }
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+
+    systemProperty "gradleVersion", defaultGradleVersion
 }
-// gradleVersions.unique()
-gradleVersions = ['7.3']
-gradleVersions.each{ gradleVersion ->
+
+tasks.register('integrationTestAll')
+
+allGradleVersions.each{ gradleVersion ->
     tasks.register("integrationTest-${gradleVersion}", Test) {
         description = 'Runs integration tests.'
         group = 'verification'
@@ -73,7 +66,7 @@ gradleVersions.each{ gradleVersion ->
 
         systemProperty "gradleVersion", gradleVersion
     }
-    tasks.integrationTest.dependsOn("integrationTest-${gradleVersion}")
+    tasks.integrationTestAll.dependsOn("integrationTest-${gradleVersion}")
 }
 
 tasks.withType(Test).configureEach {
@@ -88,7 +81,4 @@ tasks.register('package', Zip){
         exclude(".git")
         exclude("build")
     }
-    // into(".github"){
-    //     from fileTree(".github")
-    // }
 }
