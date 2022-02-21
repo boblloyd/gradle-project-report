@@ -137,6 +137,7 @@ class RunPluginTaskTest {
 
     private def build(String args){
         return GradleRunner.create()
+            .withGradleVersion(System.getProperty("gradleVersion"))
             .withProjectDir(projectFolder)
             .withArguments(args)
             .withPluginClasspath()
