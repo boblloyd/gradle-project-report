@@ -10,12 +10,14 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
     implementation 'org.codehaus.groovy:groovy-all:2.4.15'
+    testImplementation 'junit:junit:4.13'
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.2"
     integrationTestImplementation gradleTestKit()
     integrationTestImplementation 'junit:junit:4.13'
     integrationTestRuntimeOnly "org.junit.vintage:junit-vintage-engine:5.8.2"
-    // integrationTestImplementation(project)
 }
 
 gradleEnterprise {
@@ -42,7 +44,6 @@ tasks.register('integrationTest', Test) {
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-    // shouldRunAfter test
 }
 
 tasks.withType(Test).configureEach {

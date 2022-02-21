@@ -24,61 +24,115 @@ class RunPluginTaskTest {
     public File projectFolder
     public File buildFile
     public File gradlePropertiesFile
+    public File settingsFile
+    public File reportFile
 
     @Before
     public void setup() {
+        String projectName = 'test-project'
         projectFolder = tempFolder.newFolder()
         buildFile = new File(projectFolder, "build.gradle");
+        settingsFile = new File(projectFolder, 'settings.gradle')
         gradlePropertiesFile = new File(projectFolder, "gradle.properties");
 
         String buildFileContent = "plugins {\n" + 
                                   "  id 'org.boblloyd.GradleProjectReport'\n" +
                                   "}";
         writeFile(buildFile, buildFileContent);
+        String settingsContent = "rootProject.name = '${projectName}'"
+        writeFile(settingsFile, settingsContent)
+        reportFile = new File(projectFolder, "build/reports/${projectName}.md")
     }
 
     @Test
     public void runPluginTask_HappyPath(){
-        String gradlePropertiesFileContent = "version=1.0.1" +
+        String gradlePropertiesFileContent = "description=This is my sample project\n" +
                                              "group=org.test.project"
         writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
         def result = build('projectReport')
 
-        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("1.0.1"));
-        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("org.test.project"));
-        // assertTrue("Wrong renderDependencies value was reported by the plugin.", result.getOutput().contains("Is Show Dependencies: false"));
+        assertTrue("Report File Was Not Written", reportFile.exists())
         assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
     }
 
     @Test
-    public void runPluginTask_HappyPath_DifferentValues(){
-        String gradlePropertiesFileContent = "version=2.3.4" +
-                                             "group=com.company.project"
+    public void runPluginTask_ContainsData(){
+        String gradlePropertiesFileContent = "description=This is my sample project\n" +
+                                             "group=org.test.project"
         writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
         def result = build('projectReport')
 
-        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("2.3.4"));
-        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("com.company.project"));
-        // assertTrue("Wrong renderDependencies value was reported by the plugin.", result.getOutput().contains("Is Show Dependencies: false"));
-        assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+        assertTrue("Report file doesn't contain description", reportFile.text.contains("This is my sample project"))
+        assertTrue("Report file doesn't contain group", reportFile.text.contains("org.test.project"))
+        assertTrue("Report file doesn't contain name", reportFile.text.contains("test-project"))
+        assertFalse("Report file contains dependencies section, without renderDependencies set to true", reportFile.text.contains("# Dependencies"))
     }
 
     @Test
-    public void runPluginTask_HappyPath_ConfigureViaExtension(){
-        String gradlePropertiesFileContent = "version=2.3.4" +
+    public void runPluginTask_HappyPath_ProjectHasDependencies(){
+        String gradlePropertiesFileContent = "description=This is my sample project\n" +
                                              "group=com.company.project"
         writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
         def additionalBuildContent = "\nprojectReport {\n" + 
                                  "  renderDependencies=true\n" +
-                                 "}"
+                                 "}\n" + 
+                                 "repositories{mavenCentral()}\n" +
+                                 "configurations{\n" +
+                                 "  compileRuntime\n" +
+                                 "}\n" +
+                                 "dependencies{\n" +
+                                 "  compileRuntime 'junit:junit:4.12'\n" +
+                                 "}\n"
         writeFile(buildFile, additionalBuildContent, true)
 
         def result = build('projectReport')
-
-        assertTrue("Wrong version was reported by the plugin.", result.getOutput().contains("2.3.4"));
-        assertTrue("Wrong group ID was reported by the plugin.", result.getOutput().contains("com.company.project"));
-        // assertTrue("Wrong renderDependencies value was reported by the plugin.", result.getOutput().contains("Is Show Dependencies: true"));
+        assertTrue("Report file does not contain Dependencies section", reportFile.text.contains("# Dependencies"))
+        assertTrue("Report file does not contain compileRuntime section", reportFile.text.contains("## compileRuntime"))
+        assertTrue("Report file does not contain junit dependency", reportFile.text.contains("* junit:junit:4.12 - junit-4.12.jar"))
         assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+    }
+
+    @Test
+    public void runPluginTask_HappyPath_ProjectHasFileDependencies(){
+        String gradlePropertiesFileContent = "description=This is my sample project\n" +
+                                             "group=com.company.project"
+        writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
+        def additionalBuildContent = "\nprojectReport {\n" + 
+                                 "  renderDependencies=true\n" +
+                                 "}\n" + 
+                                 "repositories{mavenCentral()}\n" +
+                                 "configurations{\n" +
+                                 "  compileRuntime\n" +
+                                 "}\n" +
+                                 "dependencies{\n" +
+                                 "  compileRuntime files('/Path/to/my/file.jar')\n" +
+                                 "}\n"
+        writeFile(buildFile, additionalBuildContent, true)
+
+        def result = build('projectReport')
+        assertTrue("Report file does not contain Dependencies section", reportFile.text.contains("# Dependencies"))
+        assertTrue("Report file does not contain compileRuntime section", reportFile.text.contains("## compileRuntime"))
+        assertTrue("Report file does not contain junit dependency", reportFile.text.contains("* file:: - /Path/to/my/file.jar"))
+        assertEquals(SUCCESS, result.task(":projectReport").getOutcome());
+    }
+
+    @Test
+    public void runPluginTask_HappyPath_ProjectHasDependencies_RenderDependenciesNotSet(){
+        String gradlePropertiesFileContent = "description=This is my sample project\n" +
+                                             "group=com.company.project"
+        writeFile(gradlePropertiesFile, gradlePropertiesFileContent)
+        def additionalBuildContent =  "\nrepositories{mavenCentral()}\n" +
+                                 "configurations{\n" +
+                                 "  compileRuntime\n" +
+                                 "}\n" +
+                                 "dependencies{\n" +
+                                 "  compileRuntime 'junit:junit:4.12'\n" +
+                                 "}\n"
+        writeFile(buildFile, additionalBuildContent, true)
+        def result = build('projectReport')
+        assertFalse("Report file contains Dependencies section", reportFile.text.contains("# Dependencies"))
+        assertFalse("Report file contains compileRuntime section", reportFile.text.contains("## compileRuntime"))
+        assertFalse("Report file contains junit dependency", reportFile.text.contains("* junit:junit:4.12 - junit-4.12.jar"))
     }
 
     private def build(String args){

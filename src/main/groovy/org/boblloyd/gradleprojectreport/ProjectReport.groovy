@@ -16,20 +16,38 @@ class ProjectReport implements Plugin<Project> {
         // Add a task that uses configuration from the extension object
         project.tasks.register('projectReport', ProjectReportTask){
             projectName = project.name
-            projectVersion = project.version
-            projectGroup = project.group
-            // if (extension.renderDependencies.get()){
-            //     projectConfigurations = project.configurations
-            // }
-            outputDir = project.file(extension.output)
+            projectDescription = project.description ?: ""
+            projectGroup = project.group ?: ""
+            // We only need to set the configurations if we are actually setting the renderDependencies
+            //  value to true.  Otherwise, we don't set the project.configurations to evaluate
+            if(extension.renderDependencies.get()){
+                project.configurations.each{config ->
+                    println("Configuration: ${config.name}")
+                    if(config.canBeResolved){
+                        def depList = []
+                        config.dependencies.each{ dependency ->
+                            config.files(dependency).each{
+                                String group = dependency.group ?: 'file'
+                                String name = dependency.name
+                                String version = dependency.version ?: ''
+                                String file = it.name
+                                if(name == 'unspecified'){
+                                    name = ''
+                                }
+                                String gav = "${group}:${name}:${version}"
+                                if(gav == "file::"){
+                                    file = it.path
+                                }
+                                depList.add("${gav} - ${file}")
+                            }
+                        }
+                        configurations.put("${config.name}", depList)
+                    }
+                }
+            }
+            outputDir = extension.output
+            reportPath = new File(extension.output.get(), getReportName().get())
+            
         }
-        // project.task("projectReport"){
-        //     doLast(){
-        //         println "Version: ${project.version}"
-        //         println "Group: ${project.group}"
-        //         println "Is Show Dependencies: ${extension.renderDependencies.get()}"
-        //         println "Report Output Directory: ${extension.output.get()}"
-        //     }
-        // }
     }
 }
